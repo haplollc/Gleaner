@@ -141,12 +141,12 @@ each call narrow and the input short, let code do the planning, and let the mode
   BERT-style model that returns one vector per token, so you pool them yourself. It can need to download assets
   (`requestAssets`), has a maximum sequence length, and Apple's documentation says to prefer `NLEmbedding` for
   similarity. Gleaner ships `ContextualEmbedder` (mean pooled) for scripts and languages `NLEmbedding` lacks.
-- Averaging word vectors from `NLEmbedding.wordEmbedding` is a cheap fallback that works, and is what the
-  HaploAI app's provider does. The sentence embedding is better for whole notes.
+- Averaging word vectors from `NLEmbedding.wordEmbedding` is a cheap fallback that works, and a common choice in
+  shipping apps. The sentence embedding is better for whole notes.
 
-## 4. What a production app already did (HaploAI)
+## 4. What shipping on-device chat apps do
 
-The HaploAI iOS app's memory layer was read for ideas (no code copied):
+The memory layers of on-device chat apps tend to share three ideas:
 
 - Hybrid text plus vector search with a small top-k (3 items in chat) injected into the prompt.
 - An importance filter before anything is remembered, so the index stays small and relevant.

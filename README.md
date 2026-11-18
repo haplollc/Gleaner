@@ -101,7 +101,7 @@ Everything runs on device. Nothing is sent anywhere.
 Add the package:
 
 ```swift
-.package(url: "https://github.com/YOUR-ORG/Gleaner.git", from: "0.1.0")
+.package(url: "https://github.com/haplollc/Gleaner.git", from: "0.1.0")
 ```
 
 **Extract structured items from a big export**
