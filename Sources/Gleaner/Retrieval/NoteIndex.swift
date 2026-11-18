@@ -48,7 +48,7 @@ public actor NoteIndex {
         var vector: Data?
     }
 
-    public let embedder: any TextEmbedder
+    public nonisolated let embedder: any TextEmbedder
     private var entries: [Entry] = []
     private var vectors: [[Float]?] = []
     private var byID: [String: Int] = [:]

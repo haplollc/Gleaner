@@ -27,9 +27,9 @@ public protocol BatchOutput: Generable, Sendable {
 /// A gift idea, or any idea with a reason.
 @Generable
 public struct Idea: LineRenderable {
-    @Guide(description: "The thing itself, two to six words")
+    @Guide(description: "A specific thing to buy or do, two to five words. Never a post title or a search")
     public var title: String
-    @Guide(description: "Why it fits, one short sentence that uses the records")
+    @Guide(description: "Which interest it serves and what in the records shows it, one short sentence")
     public var why: String
 
     public init(title: String, why: String) { self.title = title; self.why = why }
@@ -42,6 +42,26 @@ public struct Ideas: BatchOutput {
     public var items: [Idea]
 
     public init(items: [Idea]) { self.items = items }
+}
+
+/// A recurring interest, hobby or theme, with what shows it.
+@Generable
+public struct Topic: LineRenderable {
+    @Guide(description: "The interest as one or two plain words, like climbing or coffee. Never a post title")
+    public var name: String
+    @Guide(description: "One short example from the records")
+    public var evidence: String
+
+    public init(name: String, evidence: String) { self.name = name; self.evidence = evidence }
+    public var line: String { "\(name): \(evidence)" }
+}
+
+@Generable
+public struct Topics: BatchOutput {
+    @Guide(description: "One entry per different interest the records show", .maximumCount(12))
+    public var items: [Topic]
+
+    public init(items: [Topic]) { self.items = items }
 }
 
 /// A short fact about something in the records.

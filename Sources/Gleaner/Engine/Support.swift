@@ -32,6 +32,10 @@ public struct GleanerProgress: Sendable, Equatable {
     public var total: Int
     public var elapsed: TimeInterval
 
+    public init(stage: Stage, label: String, completed: Int, total: Int, elapsed: TimeInterval = 0) {
+        self.stage = stage; self.label = label; self.completed = completed; self.total = total; self.elapsed = elapsed
+    }
+
     public var fraction: Double { total > 0 ? min(1, Double(completed) / Double(total)) : 0 }
 }
 

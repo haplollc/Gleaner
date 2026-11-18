@@ -25,7 +25,13 @@ func normalized(_ v: [Float]) -> [Float]? {
 public struct SentenceEmbedder: TextEmbedder {
     public let language: NLLanguage
     private let box: Box
-    private final class Box: @unchecked Sendable { let embedding: NLEmbedding; init(_ e: NLEmbedding) { embedding = e } }
+    /// NLEmbedding is not safe to call from two threads at once (it crashes), so calls take turns.
+    private final class Box: @unchecked Sendable {
+        let embedding: NLEmbedding
+        let lock = NSLock()
+        init(_ e: NLEmbedding) { embedding = e }
+        func vector(for text: String) -> [Double]? { lock.withLock { embedding.vector(for: text) } }
+    }
 
     public var name: String { "NLEmbedding.sentence.\(language.rawValue)" }
 
@@ -37,7 +43,7 @@ public struct SentenceEmbedder: TextEmbedder {
     }
 
     public func embed(_ text: String) async -> [Float]? {
-        guard let v = box.embedding.vector(for: text) else { return nil }
+        guard let v = box.vector(for: text) else { return nil }
         return normalized(v.map(Float.init))
     }
 }

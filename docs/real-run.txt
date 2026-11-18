@@ -1,0 +1,85 @@
+
+=== The model =======================================================
+availability: available
+context window: 4096 tokens
+
+=== The data (invented) =============================================
+1200 liked posts + 800 searches = 2000 records, about 32619 tokens
+that is about 8.0x the whole context window, before any instructions or answer
+sample: Liked: New chalk bag drop from a small brand, hand stitched | Searched: how to tie a tie
+planted interests: bouldering, specialty coffee, sourdough baking, houseplants, vinyl records, trail running, board games, film photography, birdwatching, fountain pens
+
+=== A. One prompt, truncated to fit =================================
+fits 165 of 2000 records (the newest 8%), 2905 prompt tokens
+took 15.6 s, 1 model call
+  - New chalk bag drop from a small brand, hand stitched: They liked this and mentioned it multiple times.
+  - Fingerboard hangs for tendon health, a thread: They liked this and called it 'so good'.
+  - My morning V60 routine, kettle with a gooseneck: They liked this and described it as 'so good'.
+  - Single origin from Ethiopia tastes like blueberry jam: They liked this and saved it for later.
+  - Merino socks that survive blisters: They liked this and mentioned it for the weekend.
+  - Grow light shelf setup for a dark apartment: They liked this and mentioned it was 'on sale'.
+
+=== B. Gleaner: read each section for topics, merge, then look up evidence per topic ===
+Reading your liked posts: 10 topics. calls 19 (+0 cached), prompt tokens 53600, biggest prompt 3113, chunks 18/18, split retries 0, skipped 0, failures 0, 313.1 s
+    climbing; running; baking; coffee; gardening; music; writing; cycling; books; art
+Reading your searches: 10 topics. calls 12 (+0 cached), prompt tokens 29469, biggest prompt 2963, chunks 11/11, split retries 0, skipped 0, failures 0, 140.5 s
+    climbing; bouldering; hiking; gardening; coffee; vinyl; cooking; music; books; birds
+merged topics (12): climbing; climbing; running; baking; coffee; coffee; gardening; gardening; music; music; books; birds
+indexed 614 unique records with NLEmbedding.sentence.en in 18.9 s
+
+total 509.1 s (index 18.9 s), 40 model calls, 87024 prompt tokens, 29/29 chunks read, 0 split retries, 0 skipped records
+  - Climbing gym day pass: Supports climbing interest; searched for 'climbing gym near me day pass'
+  - Climbing shoe resole: Supports climbing interest; searched for 'climbing shoe resole before and after'
+  - Climbing gym day pass: Supports climbing interest; searched for 'climbing gym near me day pass'
+  - Climbing shoe resole: Supports climbing interest; searched for 'climbing shoe resole before and after'
+  - Sunrise run above the treeline: Supports interest in running with a specific scenic run mentioned
+  - Headlamp for night running: Supports interest in running with a night running headlamp mentioned
+  - Recipe book on pasta: The interest in baking is supported by the liked recipe: five ingredient pasta bake
+  - Digital baking cookbook: The interest in baking is supported by the liked recipe: five ingredient pasta bake
+  - Digital coffee scale with timer: Searches for coffee scales with timers appear frequently, indicating interest in precise brewing tools
+  - Coffee grinder with timer: Searches for coffee scales with timers suggest interest in tools that help manage brewing time, suggesting a need for efficient coffee preparation tools
+  - Digital coffee scale with timer: Searches for coffee scales with timers appear frequently, indicating interest in precise brewing tools
+  - Coffee grinder with timer: Searches for coffee scales with timers suggest interest in tools that help manage brewing time, suggesting a need for efficient coffee preparation tools
+  - Terracotta pots with saucers: Supports gardening interest, as terracotta pots with saucers was searched multiple times
+  - Finger tape for climbing: Supports gardening indirectly, as climbing is a related physical activity often associated with gardening tasks
+  - Terracotta pots with saucers: Supports gardening interest, as terracotta pots with saucers was searched multiple times
+  - Finger tape for climbing: Supports gardening indirectly, as climbing is a related physical activity often associated with gardening tasks
+  - Music sheet with lyrics: Supports music interest, as lyrics are mentioned in search and interest
+  - Instrument maintenance kit: Supports music interest, as lyrics and music imply an appreciation for musical instruments
+  - Music sheet with lyrics: Supports music interest, as lyrics are mentioned in search and interest
+  - Instrument maintenance kit: Supports music interest, as lyrics and music imply an appreciation for musical instruments
+  - Dot grid notebook that handles fountain ink: Supports interest in books and is repeatedly liked in records
+  - Dot grid notebook that handles fountain ink: Supports interest in books and is repeatedly liked in records
+  - Bird feeder with birdseed: Supports interest in birds through repeated searches for window bird feeders
+  - Birdwatching guidebook: Supports interest in birds through repeated searches for field guides to birds
+
+=== C. The same topic pass again (cache) ============================
+liked posts again: 0.09 s, 0 model calls, 19 answers from cache
+
+=== D. Ask questions over all 2000 records (retrieval, no map step) ===
+
+Q: What does she do with film or cameras?
+A: She likes a pocket film camera [1, 15] and has searched for a 35mm film bulk loader [9]. [2]
+   2.0 s, prompt tokens 320, 15 notes packed
+
+Q: Which birds or bird gear has she looked at?
+A: She has looked at:
+
+1. Field guide to birds of the region [1, 2, 19]
+3. Bird call app [3, 16]
+8. Window bird feeder suction [8, 9, 10, 11, 12, 15, 17, 18]
+11. Terracotta pots with saucers [7, 11, 12]
+   4.2 s, prompt tokens 383, 19 notes packed
+
+Q: What should I get her for her birthday under $60?
+A: I do not know. [15] mentions a crate digging find for five dollars is "worth a try," but no specific birthday gift suggestion is provided.
+   3.7 s, prompt tokens 481, 19 notes packed
+
+=== Scorecard (what each approach noticed, out of 10 planted interests) ===
+A. One prompt, truncated
+  interests noticed: 2/10   grounded ideas: 33%   ideas: 6   15.6 s   1 calls   2905 prompt tokens   records read: 165/2000
+  missed: birdwatching, board games, film photography, fountain pens, houseplants, sourdough baking, specialty coffee, vinyl records
+B. Gleaner
+  interests noticed: 7/10   grounded ideas: 75%   ideas: 24   509.1 s   40 calls   87024 prompt tokens   records read: 2000/2000 (29/29 chunks)
+  missed: board games, film photography, houseplants
+.build/release/gleaner-demo --deadline 1200  31.83s user 5.99s system 6% cpu 9:01.55 total

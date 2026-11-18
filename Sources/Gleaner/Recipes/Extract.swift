@@ -89,6 +89,22 @@ extension Gleaner {
         return Extraction(items: result, report: report)
     }
 
+    /// Merges lists you already have (for example one list per data section) into about `target` items with the
+    /// same tree reduce `extract` uses: duplicates combined, weak items dropped, order kept.
+    public func merge<B: BatchOutput>(
+        _ batch: B.Type, _ items: [B.Item], to target: Int, goal: String, options: ExtractOptions = ExtractOptions()
+    ) async throws -> Extraction<B.Item> {
+        try await requireAvailable()
+        let run = RunRecorder(deadline: options.deadline, progress: options.progress)
+        var seen = Set<String>()
+        let unique = items.filter { seen.insert(Self.key($0.line)).inserted }
+        let estimator = await estimator(sampling: unique.map(\.line))
+        let merged = unique.count > target
+            ? try await reduce(batch, unique, target: target, goal: goal, estimator: estimator, label: options.label, run: run)
+            : unique
+        return Extraction(items: merged, report: run.snapshot())
+    }
+
     // MARK: Map
 
     func mapChunk<B: BatchOutput>(
@@ -186,7 +202,7 @@ extension Gleaner {
     }
 
     static func reduceInstructions(_ goal: String, keep: Int) -> String {
-        "You merge lists. Goal: \(goal) Combine duplicates and near-duplicates into one item with the most specific wording. Drop weak or generic items. Do not invent anything. Return at most \(keep) items."
+        "You merge lists. Goal: \(goal) Combine only items about the same thing into one item. Keep every different thing, even rare ones; drop only weak or generic items. Do not invent anything. Return at most \(keep) items."
     }
 
     static func knownList<I: LineRenderable>(_ items: [I], budgetTokens: Int, estimator: TokenEstimator) -> String {

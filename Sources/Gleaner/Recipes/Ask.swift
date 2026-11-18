@@ -4,10 +4,12 @@ import FoundationModels
 extension Gleaner {
     /// Answers a question from a `NoteIndex`: retrieve with BM25 plus embeddings, pack the best notes into what
     /// the window has left, and ask once. Cheap, because only a handful of notes ever reach the model.
-    public func ask(_ question: String, over index: NoteIndex, options: AskOptions = AskOptions()) async throws -> Answer {
+    public func ask(
+        _ question: String, over index: NoteIndex, instructions custom: String? = nil, options: AskOptions = AskOptions()
+    ) async throws -> Answer {
         try await requireAvailable()
         let run = RunRecorder(deadline: options.deadline, progress: options.progress)
-        let instructions = Self.askInstructions
+        let instructions = custom ?? Self.askInstructions
         let budget = await textBudget(instructions: instructions, outputReserve: options.answerTokens + 40,
                                       extraFixed: await measurer.count(question, model: model) + 24)
         let estimator = TokenEstimator()
@@ -22,11 +24,11 @@ extension Gleaner {
 
     /// The same, but the answer is a `Generable` type you define.
     public func ask<T: Generable & Sendable>(
-        _ question: String, as type: T.Type, over index: NoteIndex, options: AskOptions = AskOptions()
+        _ question: String, as type: T.Type, over index: NoteIndex, instructions custom: String? = nil, options: AskOptions = AskOptions()
     ) async throws -> (answer: T, sources: [NoteHit], report: RunReport) {
         try await requireAvailable()
         let run = RunRecorder(deadline: options.deadline, progress: options.progress)
-        let instructions = Self.askInstructions
+        let instructions = custom ?? Self.askInstructions
         let budget = await self.budget(instructions: instructions, output: type, outputReserve: options.answerTokens + 40,
                                        extraFixed: await measurer.count(question, model: model) + 24)
         let context = await index.pack(for: question, tokenBudget: budget.input, k: options.k, mode: options.mode)
@@ -35,5 +37,5 @@ extension Gleaner {
         return (answer, context.hits, run.snapshot())
     }
 
-    static let askInstructions = "You answer a question using only the numbered notes you are given. Cite what you use by note number, like [2]. If the notes do not say, answer that you do not know."
+    static let askInstructions = "You answer a question in one or two sentences, using only the numbered notes you are given. Cite what you use by note number, like [2]. If the notes do not say, answer that you do not know."
 }
